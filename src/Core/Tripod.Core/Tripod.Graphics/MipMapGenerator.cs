@@ -30,6 +30,7 @@ using Tripod.Sources;
 using Tripod.Base;
 using Hyena;
 using TagLib.Image;
+using System.Threading;
 
 namespace Tripod.Graphics
 {
@@ -55,12 +56,12 @@ namespace Tripod.Graphics
                 return new MipMapFile (mipmap_uri);
             } catch {}
 
-            GenerateMipMap (photo);
+            GenerateMipMap (photo, CancellationToken.None);
 
             return new MipMapFile (mipmap_uri);
         }
 
-        public static void GenerateMipMap (IPhoto photo)
+	    public static void GenerateMipMap (IPhoto photo, CancellationToken token)
         {
             var mipmap_uri = MipMapUri (photo);
             
@@ -69,11 +70,17 @@ namespace Tripod.Graphics
             var file = GLib.FileFactory.NewForUri (photo.Uri);
             var pixbuf = new Gdk.Pixbuf (new GLib.GioStream (file.Read (null)));
             
+            token.ThrowIfCancellationRequested ();
+
             var imagefile = TagLib.File.Create (new GIOTagLibFileAbstraction () { Uri = photo.Uri }) as TagLib.Image.File;
             var tag = imagefile.ImageTag;
+
+            token.ThrowIfCancellationRequested ();
             
             // Correct orientation
             pixbuf = pixbuf.TransformOrientation (tag.Orientation);
+
+            token.ThrowIfCancellationRequested ();
 
             // Determine mode
             var mode = pixbuf.Width > pixbuf.Height ? ScaleMode.Width : ScaleMode.Height;
@@ -84,6 +91,8 @@ namespace Tripod.Graphics
             MipMapFile map = new MipMapFile ();
             List<Gdk.Pixbuf> pixbufs = new List<Gdk.Pixbuf>(7); // Six or seven on average
 
+            token.ThrowIfCancellationRequested ();
+
             if (scale_factor > 1.0) {
                 using (var tmp = pixbuf)
                     pixbuf = pixbuf.ScaleSimple ((int) Math.Round (pixbuf.Width / scale_factor), (int) Math.Round (pixbuf.Height / scale_factor), Gdk.InterpType.Bilinear);
@@ -91,6 +100,7 @@ namespace Tripod.Graphics
 
             int max;
             do {
+	            token.ThrowIfCancellationRequested ();
                 max = Math.Max (pixbuf.Width, pixbuf.Height);
                 pixbufs.Add (pixbuf);
 
@@ -99,9 +109,8 @@ namespace Tripod.Graphics
             pixbuf.Dispose ();
 
             // As the mipmap items are built from largest -> smallest, we need to add them in reverse.
-            pixbufs.Reverse ();
-            foreach (var buf in pixbufs) {
-                map.Add (buf);
+            for (int i = pixbufs.Count - 1; i >= 0; --i) {
+                map.Add (pixbufs[i]);
             }
 
             map.WriteToUri (mipmap_uri);

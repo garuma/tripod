@@ -33,6 +33,7 @@ using Tripod.Tasks;
 
 namespace Tripod.Graphics
 {
+
     /// <summary>
     ///     Photo loader that uses locally cached mipmaps.
     /// </summary>
@@ -55,7 +56,7 @@ namespace Tripod.Graphics
             var task = new ChildCancellableTask<MipMapFile, Pixbuf> (MipMapLoader, () => {
                 source.Token.ThrowIfCancellationRequested ();
 
-                return MipMapLoader.Result.FindBest (width, height);
+                return MipMapLoader.Result.FindBest (width, height, CancellationToken.None);
             }, source);
             MipMapLoader.Request ();
             task.Start ();
@@ -86,8 +87,10 @@ namespace Tripod.Graphics
             var source = new CancellationTokenSource ();
             var task = new ChildCancellableTask<MipMapFile, bool> (MipMapLoader, () => {
                 source.Token.ThrowIfCancellationRequested ();
+                // Make waiting on the parent task cancellable too
+                MipMapLoader.Wait (source.Token);
 
-                return MipMapLoader.Result.IsBestSize (have_width, have_height, desired_width, desired_height);
+                return MipMapLoader.Result.IsBestSize (have_width, have_height, desired_width, desired_height, CancellationToken.None);
             }, source);
             task.Start ();
             return task;

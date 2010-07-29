@@ -29,6 +29,7 @@ using System;
 using System.Collections.Concurrent;
 using System.IO;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Tripod.Graphics
@@ -125,15 +126,15 @@ namespace Tripod.Graphics
         /// This selection algorithm is optimized for photo applications, it selects the smallest available piece that
         /// can be displayed within the given dimensions without upscaling.
         /// </para>
-        public Pixbuf FindBest (int width, int height)
+	    public Pixbuf FindBest (int width, int height, CancellationToken token)
         {
-            var item = FindBestItem (width, height);
+	        var item = FindBestItem (width, height, token);
             lock (item) {
                 return new Gdk.Pixbuf (item.Pixbuf, 0, 0, item.Width, item.Height);
             }
         }
 
-        MipMapItem FindBestItem (int width, int height)
+	    MipMapItem FindBestItem (int width, int height, CancellationToken token)
         {
             if (Items.Count == 0) {
                 throw new Exception ("Can't retrieve from uninitialized mip-map");
@@ -142,6 +143,8 @@ namespace Tripod.Graphics
             int i = 0;
             MipMapItem current = null;
             while (i < Items.Count) {
+	            token.ThrowIfCancellationRequested ();
+
                 current = Items[i++];
                 
                 if (current.Width > width && current.Height > height)
@@ -152,9 +155,9 @@ namespace Tripod.Graphics
             return current;
         }
 
-        public bool IsBestSize (int have_width, int have_height, int desired_width, int desired_height)
+	    public bool IsBestSize (int have_width, int have_height, int desired_width, int desired_height, CancellationToken token)
         {
-            var item = FindBestItem (desired_width, desired_height);
+	        var item = FindBestItem (desired_width, desired_height, token);
 
             return (item.Width == have_width && item.Height == have_height);
         }
