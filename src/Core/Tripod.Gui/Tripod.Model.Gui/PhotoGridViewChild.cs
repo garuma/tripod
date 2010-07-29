@@ -262,8 +262,8 @@ namespace Tripod.Model.Gui
                 return;
 
             // Scale needed to fill the grid slot.
-            double scalex = image_surface.Width / thumbnail_allocation.Width;
-            double scaley = image_surface.Height / thumbnail_allocation.Height;
+            double scalex = image_surface == null ? 1 : image_surface.Width / thumbnail_allocation.Width;
+            double scaley = image_surface == null ? 1 : image_surface.Height / thumbnail_allocation.Height;
 
             // Upscale if the photo is larger than the allocation.
             bool upscale = photo.Width > thumbnail_allocation.Width || photo.Height > thumbnail_allocation.Height;
