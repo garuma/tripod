@@ -207,7 +207,7 @@ namespace Tripod.Model.Gui
                 return;
 
             ImageSurface image_surface = null;
-            if (!(ParentLayout as PhotoGridViewLayout).SurfaceCache.TryGetValue (photo, out image_surface))
+            if (!(ParentLayout as PhotoGridViewLayout).SurfaceCache.TryGetValue (photo, out image_surface) || image_surface == null)
                 return;
 
             var surface_w = image_surface.Width;
