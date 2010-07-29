@@ -62,8 +62,8 @@ namespace TagLib.IFD.Entries
 		/// </param>
 		public SRational (int numerator, int denominator)
 		{
-			Numerator = numerator;
-			Denominator = denominator;
+			this.numerator = numerator;
+			this.denominator = denominator;
 		}
 		
 #endregion
