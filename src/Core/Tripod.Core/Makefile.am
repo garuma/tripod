@@ -39,7 +39,8 @@ SOURCES =  \
 	Tripod.Sources/PhotoSourceNotAvailableException.cs \
 	Tripod.Tasks/CancellableTask.cs \
 	Tripod.Tasks/ChildCancellableTask.cs \
-	Tripod.Tasks/RefCountCancellableTask.cs
+	Tripod.Tasks/RefCountCancellableTask.cs \
+	Tripod.Tasks/ThreeStateInit.cs
 
 RESOURCES =  \
 	Resources/contributors.xml \

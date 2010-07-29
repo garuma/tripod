@@ -43,6 +43,8 @@ namespace Tripod.Graphics
         RefCountCancellableTask<MipMapFile> MipMapLoader { get; set; }
         CancellationTokenSource MipMapLoaderTokenSource { get; set; }
 
+	    ThreeStateInit mipmapLoaded = new ThreeStateInit ();
+
         public MipMappedPhotoLoader (IPhoto photo)
         {
             Photo = photo;
@@ -65,19 +67,22 @@ namespace Tripod.Graphics
         // Fire up a mipmap loader if needed.
         void EnsureMipMap ()
         {
-            if (MipMapLoader != null)
+            if (mipmapLoaded.IsInitialized)
                 return;
-            
-            lock (this) {
-                if (MipMapLoader == null) {
-                    MipMapLoaderTokenSource = new CancellationTokenSource ();
-                    MipMapLoader = new RefCountCancellableTask<MipMapFile> (() => {
-                            MipMapLoaderTokenSource.Token.ThrowIfCancellationRequested ();
-                            return MipMapGenerator.LoadMipMap (Photo);
-                    }, MipMapLoaderTokenSource);
-                    MipMapLoader.Start ();
-                }
+
+            if (!mipmapLoaded.ProposeToInitialize ()) {
+	            mipmapLoaded.WaitForInitialization ();
+	            return;
             }
+
+            MipMapLoaderTokenSource = new CancellationTokenSource ();
+            MipMapLoader = new RefCountCancellableTask<MipMapFile> (() => {
+		            MipMapLoaderTokenSource.Token.ThrowIfCancellationRequested ();
+		            return MipMapGenerator.LoadMipMap (Photo);
+	            }, MipMapLoaderTokenSource);
+            MipMapLoader.Start ();
+            
+            mipmapLoaded.SetInitialized ();
         }
 
         public Task<bool> IsBestPreview (int have_width, int have_height, int desired_width, int desired_height)
